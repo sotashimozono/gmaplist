@@ -100,3 +100,43 @@ class TestAnnotate(unittest.TestCase):
         row = geo.annotate([place], None)[0]
         self.assertIsNone(row["prefecture"])
         self.assertEqual(row["block"], "abroad")
+
+
+class TestCountry(unittest.TestCase):
+    """Google formats foreign addresses with the country last."""
+
+    def test_country_is_taken_from_a_foreign_address(self):
+        self.assertEqual(
+            geo.country_from_address("Friesenstrasse 64-66, 50670 Koeln, ドイツ"),
+            "ドイツ",
+        )
+        self.assertEqual(
+            geo.country_from_address(
+                "1 Jalan Something, 10450 George Town, マレーシア"
+            ),
+            "マレーシア",
+        )
+
+    def test_japanese_addresses_have_no_country(self):
+        self.assertEqual(geo.country_from_address("〒163-8001 東京都新宿区西新宿"), "")
+
+    def test_empty_or_single_component_address(self):
+        self.assertEqual(geo.country_from_address(""), "")
+        self.assertEqual(geo.country_from_address("Nowhere"), "")
+
+    def test_annotate_uses_the_country_as_the_block(self):
+        place = Place(name="brewery", address="Friesenstrasse 1, 50670 Koeln, ドイツ")
+        row = geo.annotate([place], None)[0]
+        self.assertIsNone(row["prefecture"])
+        self.assertEqual(row["country"], "ドイツ")
+        self.assertEqual(row["block"], "ドイツ")
+
+    def test_japanese_rows_carry_no_country(self):
+        place = Place(name="x", address="〒545-0002 大阪府大阪市阿倍野区")
+        row = geo.annotate([place], None)[0]
+        self.assertEqual(row["country"], "")
+        self.assertEqual(row["block"], "近畿")
+
+    def test_unlocatable_row_still_falls_back_to_abroad(self):
+        row = geo.annotate([Place(name="x", address="")], None)[0]
+        self.assertEqual(row["block"], "abroad")

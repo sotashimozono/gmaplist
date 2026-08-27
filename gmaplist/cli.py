@@ -22,6 +22,14 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("--geojson", metavar="PATH", help="write a point FeatureCollection")
     p.add_argument("--no-report", action="store_true", help="suppress the text report")
     p.add_argument(
+        "--anchor",
+        metavar="LAT,LNG",
+        help=(
+            "reference point; adds a distance_km column and a reach section "
+            "answering whether the list is actually about places near you"
+        ),
+    )
+    p.add_argument(
         "--tz-offset",
         type=float,
         default=9.0,
@@ -42,8 +50,26 @@ def build_parser() -> argparse.ArgumentParser:
     return p
 
 
+def _parse_anchor(text: str) -> tuple[float, float]:
+    parts = text.replace(" ", "").split(",")
+    if len(parts) != 2:
+        raise ValueError("expected LAT,LNG")
+    lat, lng = (float(v) for v in parts)
+    if not (-90.0 <= lat <= 90.0 and -180.0 <= lng <= 180.0):
+        raise ValueError("coordinates out of range")
+    return lat, lng
+
+
 def main(argv: list[str] | None = None) -> int:
     args = build_parser().parse_args(argv)
+
+    anchor = None
+    if args.anchor:
+        try:
+            anchor = _parse_anchor(args.anchor)
+        except ValueError as exc:
+            print(f"gmaplist: --anchor {args.anchor!r}: {exc}", file=sys.stderr)
+            return 2
 
     try:
         plist, rows = load(
@@ -62,17 +88,17 @@ def main(argv: list[str] | None = None) -> int:
         return 1
 
     if args.csv:
-        export.write_csv(args.csv, rows, args.tz_offset)
+        export.write_csv(args.csv, rows, args.tz_offset, anchor)
         print(f"wrote {args.csv} ({len(rows)} places)", file=sys.stderr)
     if args.json:
-        export.write_json(args.json, plist, rows, args.tz_offset)
+        export.write_json(args.json, plist, rows, args.tz_offset, anchor)
         print(f"wrote {args.json}", file=sys.stderr)
     if args.geojson:
-        export.write_geojson(args.geojson, rows, args.tz_offset)
+        export.write_geojson(args.geojson, rows, args.tz_offset, anchor)
         print(f"wrote {args.geojson}", file=sys.stderr)
 
     if not args.no_report:
-        text = render(plist, rows, args.tz_offset)
+        text = render(plist, rows, args.tz_offset, anchor=anchor)
         # Console encodings on Windows are frequently not UTF-8.
         stream = sys.stdout
         if getattr(stream, "encoding", "").lower() not in ("utf-8", "utf8"):

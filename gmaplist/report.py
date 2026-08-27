@@ -29,8 +29,17 @@ def _stamp(
 
 
 def render(
-    plist, rows: Sequence[dict], tz_offset_hours: float = 9.0, bar_unit: int = 2
+    plist,
+    rows: Sequence[dict],
+    tz_offset_hours: float = 9.0,
+    bar_unit: int = 2,
+    anchor: tuple[float, float] | None = None,
 ) -> str:
+    """Render the text report.
+
+    With ``anchor`` set, a "reach" section reports how far the list extends
+    from that coordinate.
+    """
     tz = _dt.timezone(_dt.timedelta(hours=tz_offset_hours))
     out: list[str] = []
     add = out.append
@@ -58,7 +67,8 @@ def render(
     name_w = max([width(c["name"]) for c in contributors] + [4])
     add(
         f"{pad('count', 6, '>')}  {pad('share', 6, '>')}  {pad('name', name_w)}  "
-        f"{pad('notes', 7, '>')}  {pad('avg', 6, '>')}  top regions"
+        f"{pad('notes', 7, '>')}  {pad('wrote', 6, '>')}  {pad('avg', 6, '>')}  "
+        "top regions"
     )
     for c in contributors:
         regions = " / ".join(f"{r}{n}" for r, n in c["top_regions"])
@@ -73,6 +83,8 @@ def render(
             + pad(c["name"], name_w)
             + "  "
             + pad(notes, 7, ">")
+            + "  "
+            + pad(str(c["notes_written"]), 6, ">")
             + "  "
             + pad(avg, 6, ">")
             + "  "
@@ -114,6 +126,52 @@ def render(
             v = cells.get((person, block), 0)
             line += pad(str(v) if v else "", col_w, ">")
         add(line)
+
+    crossed = analyze.cross_author_notes(rows)
+    if crossed:
+        add("")
+        add("## notes written on someone else's entry")
+        for item in crossed:
+            add(f"   {item['name']}")
+            add(f"      added by {item['added_by']}, note by {item['note_by']}")
+
+    if anchor is not None:
+        summary = analyze.distance_summary(rows, anchor)
+        add("")
+        add(f"## reach from {anchor[0]:.5f}, {anchor[1]:.5f}")
+        add(
+            f"   median {summary['median_km']:.1f} km"
+            f"   mean {summary['mean_km']:.1f} km"
+            f"   ({summary['count']} located)"
+        )
+        for lo, hi, n in summary["bands"]:
+            label = f"{lo:.0f}-{hi:.0f} km" if hi != float("inf") else f">{lo:.0f} km"
+            share = n / summary["count"] * 100 if summary["count"] else 0.0
+            add(
+                f"{pad(str(n), 5, '>')}  {pad(f'{share:.1f}%', 6, '>')}  "
+                f"{pad(label, 12)}{'#' * round(n / bar_unit)}"
+            )
+        nearest = " / ".join(f"{n} ({d:.1f} km)" for n, d in summary["nearest"])
+        farthest = " / ".join(f"{n} ({d:.0f} km)" for n, d in summary["farthest"])
+        add(f"   nearest:  {nearest}")
+        add(f"   farthest: {farthest}")
+
+        add("")
+        add("## where each contributor clusters")
+        geo_rows = analyze.contributor_geography(rows, anchor)
+        add(
+            pad("", name_w)
+            + pad("n", 5, ">")
+            + pad("centroid from anchor", 24, ">")
+            + pad("own spread", 14, ">")
+        )
+        for g in geo_rows:
+            add(
+                pad(g["name"], name_w)
+                + pad(str(g["count"]), 5, ">")
+                + pad(f"{g['anchor_km']:.0f} km", 24, ">")
+                + pad(f"{g['spread_km']:.0f} km", 14, ">")
+            )
 
     dupes = analyze.duplicates(rows)
     if dupes:

@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "gmaplist"
-version = "0.2.0"
+version = "0.3.0"
 description = "Read and analyse Google Maps shared place lists, including per-entry contributor and timestamp"
 readme = "README.md"
 requires-python = ">=3.10"
