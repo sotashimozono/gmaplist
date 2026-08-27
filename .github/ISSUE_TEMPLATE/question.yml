@@ -1,0 +1,15 @@
+name: Question
+description: Ask how something works.
+labels: [question]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        The payload index table in `README.md` documents every field this
+        package reads. Worth a look first.
+  - type: textarea
+    id: question
+    attributes:
+      label: Question
+    validations:
+      required: true

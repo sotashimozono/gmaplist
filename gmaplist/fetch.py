@@ -70,7 +70,9 @@ def resolve_list_id(source: str, timeout: float = 30.0) -> str:
     return m.group(1)
 
 
-def build_url(list_id: str, hl: str = "ja", gl: str = "jp", page_size: int = DEFAULT_PAGE_SIZE) -> str:
+def build_url(
+    list_id: str, hl: str = "ja", gl: str = "jp", page_size: int = DEFAULT_PAGE_SIZE
+) -> str:
     pb = f"!1m4!1s{list_id}!2e1!3m1!1e1!2e2!3e2!4i{page_size}"
     return f"{ENDPOINT}?authuser=0&hl={hl}&gl={gl}&pb={pb}"
 

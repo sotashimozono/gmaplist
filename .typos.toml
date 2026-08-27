@@ -1,0 +1,8 @@
+# typos runs over Japanese prefecture and address strings, which it has no
+# dictionary for. Keep it to identifiers and prose it can actually judge.
+[files]
+extend-exclude = ["*.csv", "*.geojson"]
+
+[default.extend-words]
+# "nam_ja" is a property name in the upstream boundary GeoJSON.
+nam = "nam"

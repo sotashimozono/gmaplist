@@ -1,0 +1,4 @@
+# Pinned so CI and a local checkout enforce byte-identical formatting.
+# A floating lint version means "green locally, red in CI" for reasons that
+# have nothing to do with the change under review.
+ruff==0.16.4

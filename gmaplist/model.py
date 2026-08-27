@@ -9,8 +9,9 @@ break if Google reshapes the message.
 from __future__ import annotations
 
 import datetime as _dt
+from collections.abc import Iterator
 from dataclasses import dataclass, field
-from typing import Any, Iterator
+from typing import Any
 
 _UINT64 = 1 << 64
 
@@ -42,7 +43,7 @@ class Author:
     avatar_url: str | None = None
 
     @classmethod
-    def _parse(cls, node: Any) -> "Author | None":
+    def _parse(cls, node: Any) -> Author | None:
         name = _at(node, 0)
         if not name:
             return None
@@ -73,7 +74,7 @@ class Place:
         return ""
 
     @classmethod
-    def _parse(cls, node: Any) -> "Place":
+    def _parse(cls, node: Any) -> Place:
         ids = _at(node, 1, 6)
         place_id = ""
         if isinstance(ids, list) and len(ids) >= 2:
@@ -126,13 +127,12 @@ class PlaceList:
         return iter(self.places)
 
     @classmethod
-    def _parse(cls, payload: Any) -> "PlaceList":
+    def _parse(cls, payload: Any) -> PlaceList:
         root = _at(payload, 0)
         if root is None or _at(root, 0, 0) is None:
             raise ValueError(
                 "unexpected getlist payload shape; the list may be private, "
-                "deleted, or the request was throttled: "
-                + repr(payload)[:200]
+                "deleted, or the request was throttled: " + repr(payload)[:200]
             )
         items = _at(root, 8) or []
         return cls(

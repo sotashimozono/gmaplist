@@ -12,7 +12,15 @@ SQUARE = {
             "properties": {"nam_ja": "東京都"},
             "geometry": {
                 "type": "Polygon",
-                "coordinates": [[[139.0, 35.0], [140.0, 35.0], [140.0, 36.0], [139.0, 36.0], [139.0, 35.0]]],
+                "coordinates": [
+                    [
+                        [139.0, 35.0],
+                        [140.0, 35.0],
+                        [140.0, 36.0],
+                        [139.0, 36.0],
+                        [139.0, 35.0],
+                    ]
+                ],
             },
         }
     ]
@@ -21,15 +29,25 @@ SQUARE = {
 
 class TestAddressParsing(unittest.TestCase):
     def test_prefecture(self):
-        self.assertEqual(geo.prefecture_from_address("〒163-8001 東京都新宿区西新宿２丁目"), "東京都")
-        self.assertEqual(geo.prefecture_from_address("〒545-0002 大阪府大阪市阿倍野区"), "大阪府")
-        self.assertEqual(geo.prefecture_from_address("〒604-8006 京都府京都市中京区"), "京都府")
+        self.assertEqual(
+            geo.prefecture_from_address("〒163-8001 東京都新宿区西新宿２丁目"), "東京都"
+        )
+        self.assertEqual(
+            geo.prefecture_from_address("〒545-0002 大阪府大阪市阿倍野区"), "大阪府"
+        )
+        self.assertEqual(
+            geo.prefecture_from_address("〒604-8006 京都府京都市中京区"), "京都府"
+        )
         self.assertIsNone(geo.prefecture_from_address(""))
         self.assertIsNone(geo.prefecture_from_address("10 Downing St, London"))
 
     def test_city(self):
-        self.assertEqual(geo.city_from_address("〒163-8001 東京都新宿区西新宿２丁目"), "新宿区")
-        self.assertEqual(geo.city_from_address("〒545-0002 大阪府大阪市阿倍野区天王寺町南"), "大阪市")
+        self.assertEqual(
+            geo.city_from_address("〒163-8001 東京都新宿区西新宿２丁目"), "新宿区"
+        )
+        self.assertEqual(
+            geo.city_from_address("〒545-0002 大阪府大阪市阿倍野区天王寺町南"), "大阪市"
+        )
         self.assertEqual(geo.city_from_address("no prefecture here"), "")
 
     def test_blocks_cover_every_prefecture(self):
@@ -61,7 +79,9 @@ class TestPolygonLookup(unittest.TestCase):
 
 class TestAnnotate(unittest.TestCase):
     def test_address_wins_over_polygon(self):
-        place = Place(name="a", address="〒545-0002 大阪府大阪市阿倍野区", lat=35.5, lng=139.5)
+        place = Place(
+            name="a", address="〒545-0002 大阪府大阪市阿倍野区", lat=35.5, lng=139.5
+        )
         row = geo.annotate([place], geo.PrefectureIndex(SQUARE))[0]
         self.assertEqual(row["prefecture"], "大阪府")
         self.assertEqual(row["prefecture_source"], "address")
@@ -71,7 +91,9 @@ class TestAnnotate(unittest.TestCase):
     def test_polygon_fills_the_gap(self):
         place = Place(name="a", address="", lat=35.5, lng=139.5)
         row = geo.annotate([place], geo.PrefectureIndex(SQUARE))[0]
-        self.assertEqual((row["prefecture"], row["prefecture_source"]), ("東京都", "polygon"))
+        self.assertEqual(
+            (row["prefecture"], row["prefecture_source"]), ("東京都", "polygon")
+        )
 
     def test_without_index_unresolved_stays_unresolved(self):
         place = Place(name="a", address="", lat=35.5, lng=139.5)

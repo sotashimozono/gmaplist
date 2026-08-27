@@ -10,24 +10,70 @@ from __future__ import annotations
 import json
 import os
 import urllib.request
+from collections.abc import Iterable, Sequence
 from pathlib import Path
-from typing import Iterable, Sequence
 
 GEOJSON_URL = "https://raw.githubusercontent.com/dataofjapan/land/master/japan.geojson"
 
 PREFECTURES: tuple[str, ...] = (
-    "北海道", "青森県", "岩手県", "宮城県", "秋田県", "山形県", "福島県",
-    "茨城県", "栃木県", "群馬県", "埼玉県", "千葉県", "東京都", "神奈川県",
-    "新潟県", "富山県", "石川県", "福井県", "山梨県", "長野県", "岐阜県",
-    "静岡県", "愛知県", "三重県", "滋賀県", "京都府", "大阪府", "兵庫県",
-    "奈良県", "和歌山県", "鳥取県", "島根県", "岡山県", "広島県", "山口県",
-    "徳島県", "香川県", "愛媛県", "高知県", "福岡県", "佐賀県", "長崎県",
-    "熊本県", "大分県", "宮崎県", "鹿児島県", "沖縄県",
+    "北海道",
+    "青森県",
+    "岩手県",
+    "宮城県",
+    "秋田県",
+    "山形県",
+    "福島県",
+    "茨城県",
+    "栃木県",
+    "群馬県",
+    "埼玉県",
+    "千葉県",
+    "東京都",
+    "神奈川県",
+    "新潟県",
+    "富山県",
+    "石川県",
+    "福井県",
+    "山梨県",
+    "長野県",
+    "岐阜県",
+    "静岡県",
+    "愛知県",
+    "三重県",
+    "滋賀県",
+    "京都府",
+    "大阪府",
+    "兵庫県",
+    "奈良県",
+    "和歌山県",
+    "鳥取県",
+    "島根県",
+    "岡山県",
+    "広島県",
+    "山口県",
+    "徳島県",
+    "香川県",
+    "愛媛県",
+    "高知県",
+    "福岡県",
+    "佐賀県",
+    "長崎県",
+    "熊本県",
+    "大分県",
+    "宮崎県",
+    "鹿児島県",
+    "沖縄県",
 )
 
 _BLOCK_RANGES = (
-    ("北海道", 1), ("東北", 6), ("関東", 7), ("中部", 9), ("近畿", 7),
-    ("中国", 5), ("四国", 4), ("九州", 8),
+    ("北海道", 1),
+    ("東北", 6),
+    ("関東", 7),
+    ("中部", 9),
+    ("近畿", 7),
+    ("中国", 5),
+    ("四国", 4),
+    ("九州", 8),
 )
 
 
@@ -83,13 +129,15 @@ def _ring_bbox(ring: Sequence[Sequence[float]]) -> tuple[float, float, float, fl
     return min(xs), min(ys), max(xs), max(ys)
 
 
-def _dist2_to_segment(px: float, py: float, ax: float, ay: float, bx: float, by: float) -> float:
+def _dist2_to_segment(  # noqa: PLR0917 - six scalars beats boxing points
+    px: float, py: float, ax: float, ay: float, bx: float, by: float
+) -> float:
     """Squared distance from a point to a segment, in degrees."""
     dx, dy = bx - ax, by - ay
     if dx == 0.0 and dy == 0.0:
         return (px - ax) ** 2 + (py - ay) ** 2
     t = ((px - ax) * dx + (py - ay) * dy) / (dx * dx + dy * dy)
-    t = 0.0 if t < 0.0 else (1.0 if t > 1.0 else t)
+    t = 0.0 if t < 0.0 else (min(t, 1.0))
     return (px - (ax + t * dx)) ** 2 + (py - (ay + t * dy)) ** 2
 
 
@@ -99,8 +147,7 @@ def _dist2_to_ring(px: float, py: float, ring: Sequence[Sequence[float]]) -> flo
     for pt in ring:
         bx, by = pt[0], pt[1]
         d = _dist2_to_segment(px, py, ax, ay, bx, by)
-        if d < best:
-            best = d
+        best = min(best, d)
         ax, ay = bx, by
     return best
 
@@ -137,7 +184,7 @@ class PrefectureIndex:
                 self._prefs.append((name, rings))
 
     @classmethod
-    def load(cls, refresh: bool = False, timeout: float = 60.0) -> "PrefectureIndex":
+    def load(cls, refresh: bool = False, timeout: float = 60.0) -> PrefectureIndex:
         path = cache_dir() / "japan.geojson"
         if refresh or not path.exists():
             path.parent.mkdir(parents=True, exist_ok=True)
@@ -148,7 +195,11 @@ class PrefectureIndex:
     def contains(self, lat: float, lng: float) -> str | None:
         for name, rings in self._prefs:
             for x0, y0, x1, y1, ring in rings:
-                if x0 <= lng <= x1 and y0 <= lat <= y1 and _point_in_ring(lng, lat, ring):
+                if (
+                    x0 <= lng <= x1
+                    and y0 <= lat <= y1
+                    and _point_in_ring(lng, lat, ring)
+                ):
                     return name
         return None
 
@@ -162,7 +213,10 @@ class PrefectureIndex:
         best_d, best = max_deg * max_deg, None
         for name, rings in self._prefs:
             for x0, y0, x1, y1, ring in rings:
-                if not (x0 - max_deg <= lng <= x1 + max_deg and y0 - max_deg <= lat <= y1 + max_deg):
+                if not (
+                    x0 - max_deg <= lng <= x1 + max_deg
+                    and y0 - max_deg <= lat <= y1 + max_deg
+                ):
                     continue
                 d = _dist2_to_ring(lng, lat, ring)
                 if d < best_d:

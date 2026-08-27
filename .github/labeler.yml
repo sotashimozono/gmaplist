@@ -1,0 +1,21 @@
+ci:
+  - changed-files:
+      - any-glob-to-any-file: [".github/**"]
+
+documentation:
+  - changed-files:
+      - any-glob-to-any-file: ["**/*.md", "LICENSE"]
+
+tests:
+  - changed-files:
+      - any-glob-to-any-file: ["tests/**"]
+
+# The reverse-engineered surface. Changes here have no upstream contract to
+# validate against, so they get their own label.
+decoder:
+  - changed-files:
+      - any-glob-to-any-file: ["gmaplist/model.py", "gmaplist/fetch.py"]
+
+geo:
+  - changed-files:
+      - any-glob-to-any-file: ["gmaplist/geo.py"]

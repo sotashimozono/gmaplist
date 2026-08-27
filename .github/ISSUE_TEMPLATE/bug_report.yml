@@ -1,0 +1,48 @@
+name: Bug report
+description: Something behaves differently from what the README says.
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        **Do not paste a share link, a list id, or an export.** Those identify
+        real people. Describe the shape of the list instead ("143 places, 10
+        contributors, ~40% without a Google-supplied address").
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened
+      description: Include the exact command or call, and the full traceback.
+      render: text
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: What you expected instead
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: gmaplist version
+      description: "`gmaplist --version`, or the commit if installed from source."
+    validations:
+      required: true
+  - type: input
+    id: python
+    attributes:
+      label: Python version and OS
+      placeholder: "3.12.4 on Windows 11"
+    validations:
+      required: true
+  - type: checkboxes
+    id: decoder
+    attributes:
+      label: Does it look like the payload shape changed?
+      description: >-
+        Google can reshape the response at any time. If you see
+        "unexpected getlist payload shape", or fields coming back empty that
+        the README says should be populated, tick this.
+      options:
+        - label: Fields are missing or the payload failed to decode

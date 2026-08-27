@@ -5,13 +5,26 @@ from __future__ import annotations
 import csv
 import datetime as _dt
 import json
+from collections.abc import Sequence
 from pathlib import Path
-from typing import Sequence
 
 FIELDS = (
-    "added_at", "updated_at", "added_by", "added_by_id", "name", "prefecture",
-    "city", "block", "address", "lat", "lng", "note", "place_id", "mid",
-    "prefecture_source", "maps_url",
+    "added_at",
+    "updated_at",
+    "added_by",
+    "added_by_id",
+    "name",
+    "prefecture",
+    "city",
+    "block",
+    "address",
+    "lat",
+    "lng",
+    "note",
+    "place_id",
+    "mid",
+    "prefecture_source",
+    "maps_url",
 )
 
 
@@ -47,7 +60,9 @@ def to_records(rows: Sequence[dict], tz_offset_hours: float = 9.0) -> list[dict]
     return out
 
 
-def write_csv(path: str | Path, rows: Sequence[dict], tz_offset_hours: float = 9.0) -> None:
+def write_csv(
+    path: str | Path, rows: Sequence[dict], tz_offset_hours: float = 9.0
+) -> None:
     """Write UTF-8 with BOM so Excel opens Japanese text correctly."""
     records = to_records(rows, tz_offset_hours)
     with open(path, "w", encoding="utf-8-sig", newline="") as fh:
@@ -56,7 +71,9 @@ def write_csv(path: str | Path, rows: Sequence[dict], tz_offset_hours: float = 9
         writer.writerows(records)
 
 
-def write_json(path: str | Path, plist, rows: Sequence[dict], tz_offset_hours: float = 9.0) -> None:
+def write_json(
+    path: str | Path, plist, rows: Sequence[dict], tz_offset_hours: float = 9.0
+) -> None:
     payload = {
         "list_id": plist.list_id,
         "title": plist.title,
@@ -73,10 +90,12 @@ def write_json(path: str | Path, plist, rows: Sequence[dict], tz_offset_hours: f
     )
 
 
-def write_geojson(path: str | Path, rows: Sequence[dict], tz_offset_hours: float = 9.0) -> None:
+def write_geojson(
+    path: str | Path, rows: Sequence[dict], tz_offset_hours: float = 9.0
+) -> None:
     """Point FeatureCollection, ready to drop into any map viewer."""
     features = []
-    for record, row in zip(to_records(rows, tz_offset_hours), rows):
+    for record, row in zip(to_records(rows, tz_offset_hours), rows, strict=True):
         p = row["place"]
         if p.lat is None or p.lng is None:
             continue
@@ -88,6 +107,8 @@ def write_geojson(path: str | Path, rows: Sequence[dict], tz_offset_hours: float
             }
         )
     Path(path).write_text(
-        json.dumps({"type": "FeatureCollection", "features": features}, ensure_ascii=False),
+        json.dumps(
+            {"type": "FeatureCollection", "features": features}, ensure_ascii=False
+        ),
         encoding="utf-8",
     )

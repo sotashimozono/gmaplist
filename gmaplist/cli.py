@@ -3,9 +3,10 @@
 from __future__ import annotations
 
 import argparse
+import contextlib
 import sys
 
-from . import __version__, load
+from . import __version__, export, load
 from .fetch import ListFetchError
 from .report import render
 
@@ -32,7 +33,9 @@ def build_parser() -> argparse.ArgumentParser:
         action="store_true",
         help="skip boundary lookup; places without an address stay unresolved",
     )
-    p.add_argument("--refresh-geo", action="store_true", help="re-download the boundary file")
+    p.add_argument(
+        "--refresh-geo", action="store_true", help="re-download the boundary file"
+    )
     p.add_argument("--hl", default="ja", help="Google UI language (default: ja)")
     p.add_argument("--gl", default="jp", help="Google region (default: jp)")
     p.add_argument("--version", action="version", version=f"gmaplist {__version__}")
@@ -58,8 +61,6 @@ def main(argv: list[str] | None = None) -> int:
         print("gmaplist: the list is empty or not publicly shared", file=sys.stderr)
         return 1
 
-    from . import export
-
     if args.csv:
         export.write_csv(args.csv, rows, args.tz_offset)
         print(f"wrote {args.csv} ({len(rows)} places)", file=sys.stderr)
@@ -75,9 +76,7 @@ def main(argv: list[str] | None = None) -> int:
         # Console encodings on Windows are frequently not UTF-8.
         stream = sys.stdout
         if getattr(stream, "encoding", "").lower() not in ("utf-8", "utf8"):
-            try:
+            with contextlib.suppress(AttributeError, OSError):
                 stream.reconfigure(encoding="utf-8")
-            except (AttributeError, OSError):
-                pass
         print(text)
     return 0

@@ -1,0 +1,15 @@
+# CODEOWNERS for gmaplist
+#
+# GitHub auto-assigns the matching owners as reviewers on every PR touching
+# the listed paths (last matching pattern wins). This file does not enforce
+# review; branch protection on `main` does.
+
+*  @sotashimozono
+
+# CI definitions and the payload decoder are the two places where a careless
+# change is expensive: the first can weaken every other gate, the second is
+# reverse-engineered and has no upstream contract to fall back on.
+/.github/workflows/   @sotashimozono
+/gmaplist/model.py    @sotashimozono
+/gmaplist/fetch.py    @sotashimozono
+/pyproject.toml       @sotashimozono

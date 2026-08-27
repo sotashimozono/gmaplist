@@ -58,22 +58,28 @@ class TestAggregations(unittest.TestCase):
 
     def test_by_prefecture_and_block(self):
         self.assertEqual(analyze.by_prefecture(ROWS)[0], ("鹿児島県", 2))
-        self.assertEqual(dict(analyze.by_block(ROWS)), {"九州": 2, "関東": 1, "近畿": 1})
+        self.assertEqual(
+            dict(analyze.by_block(ROWS)), {"九州": 2, "関東": 1, "近畿": 1}
+        )
 
     def test_timeline_uses_the_given_offset(self):
         # 20:00 UTC on the 26th is 05:00 JST on the 27th
-        self.assertEqual(analyze.timeline(ROWS, "day", 9.0), [("2026-08-27", 3), ("2026-08-28", 1)])
-        self.assertEqual(analyze.timeline(ROWS, "day", 0.0), [("2026-08-26", 3), ("2026-08-27", 1)])
+        self.assertEqual(
+            analyze.timeline(ROWS, "day", 9.0), [("2026-08-27", 3), ("2026-08-28", 1)]
+        )
+        self.assertEqual(
+            analyze.timeline(ROWS, "day", 0.0), [("2026-08-26", 3), ("2026-08-27", 1)]
+        )
 
     def test_crosstab(self):
-        people, blocks, cells = analyze.crosstab(ROWS)
+        people, _blocks, cells = analyze.crosstab(ROWS)
         self.assertEqual(people, ["Alice", "Bob"])
         self.assertEqual(cells[("Alice", "九州")], 2)
         self.assertEqual(cells.get(("Bob", "九州"), 0), 0)
 
     def test_duplicates(self):
         self.assertEqual(analyze.duplicates(ROWS), [])
-        self.assertEqual(analyze.duplicates(ROWS + [ROWS[0]]), [("a", 2)])
+        self.assertEqual(analyze.duplicates([*ROWS, ROWS[0]]), [("a", 2)])
 
     def test_unknown_author(self):
         anon = row("e", "東京都", None, 26)
