@@ -95,4 +95,4 @@ def fetch_raw(
     try:
         return json.loads(body)
     except json.JSONDecodeError as exc:
-        raise ListFetchError(f"unparseable getlist response for {list_id}") from exc
+        raise ListFetchError(f"unparsable getlist response for {list_id}") from exc

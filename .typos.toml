@@ -6,3 +6,5 @@ extend-exclude = ["*.csv", "*.geojson"]
 [default.extend-words]
 # "nam_ja" is a property name in the upstream boundary GeoJSON.
 nam = "nam"
+# Ray-casting coordinates: ix/iy is the current vertex, jx/jy the previous.
+iy = "iy"

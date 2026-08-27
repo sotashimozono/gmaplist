@@ -11,8 +11,8 @@ has to run on 3.10, where that module does not exist. Only one key is needed,
 so it is scanned for directly.
 
 Versions here are plain `X.Y.Z`, optionally with a `-label.N` prerelease
-suffix; anything outside that is rejected loudly rather than silently
-mis-ordered.
+suffix; anything outside that is rejected loudly rather than being put in
+the wrong order silently.
 """
 
 from __future__ import annotations
