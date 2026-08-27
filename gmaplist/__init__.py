@@ -30,7 +30,10 @@ __all__ = [
     "resolve_list_id",
 ]
 
-__version__ = "0.1.0"
+# Kept in step with [project].version in pyproject.toml, which is what the
+# version-check gate reads. tests/test_version_consistency.py fails if the
+# two drift apart.
+__version__ = "0.4.1"
 
 
 def load(
