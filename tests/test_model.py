@@ -118,3 +118,33 @@ class TestPlaceList(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class TestNoteAuthor(unittest.TestCase):
+    """A note carries its own author, which is not always the entry author."""
+
+    @staticmethod
+    def _item(entry_author, note_author, note="a note"):
+        item = [None] * 16
+        item[2] = "Somewhere"
+        item[3] = note
+        item[12] = [entry_author, None, entry_author + "-id"]
+        if note_author is not None:
+            item[15] = [[note_author, None, note_author + "-id"]]
+        return item
+
+    def test_same_person_added_and_annotated(self):
+        place = Place._parse(self._item("Alice", "Alice"))
+        self.assertEqual(place.added_by.name, "Alice")
+        self.assertEqual(place.note_author.name, "Alice")
+
+    def test_collaborator_annotated_someone_elses_entry(self):
+        place = Place._parse(self._item("Alice", "Bob"))
+        self.assertEqual(place.added_by.name, "Alice")
+        self.assertEqual(place.note_author.name, "Bob")
+
+    def test_entry_without_a_note_has_no_note_author(self):
+        item = self._item("Alice", None, note=None)
+        place = Place._parse(item)
+        self.assertEqual(place.note, "")
+        self.assertIsNone(place.note_author)

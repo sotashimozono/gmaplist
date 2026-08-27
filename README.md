@@ -40,6 +40,8 @@ gmaplist https://maps.app.goo.gl/xxxxxxxxxxxx --csv places.csv
   --json PATH         write list metadata and places to JSON
   --geojson PATH      write a point FeatureCollection
   --no-report         suppress the text report on stdout
+  --anchor LAT,LNG    reference point: adds a distance_km column and a
+                      reach section
   --tz-offset HOURS   offset used to display timestamps (default 9, JST)
   --no-geo            skip boundary lookup for places with no address
   --refresh-geo       re-download the boundary file
@@ -47,8 +49,14 @@ gmaplist https://maps.app.goo.gl/xxxxxxxxxxxx --csv places.csv
 ```
 
 The report covers contributor totals and note habits, prefecture and regional
-block distribution, additions per day, a contributor-by-region crosstab, and
-duplicate entries.
+block distribution, additions per day, a contributor-by-region crosstab,
+notes written on someone else's entry, and duplicate entries. With
+`--anchor` it also reports how far the list reaches from that point and
+where each contributor's picks cluster.
+
+That last one is the question a saved list quietly begs: a group's list is
+assumed to be places near the group. Measuring against a home coordinate is
+what tells you whether it actually is.
 
 Accepted inputs: a `maps.app.goo.gl` share link, a
 `google.com/maps/placelists/list/<id>` URL, a `/maps/@/data=...!2s<id>!3e3`
@@ -70,7 +78,11 @@ export.write_csv("places.csv", rows)
 ```
 
 Each row is `{"place": Place, "prefecture": str | None, "prefecture_source":
-str, "city": str, "block": str}`. `prefecture_source` is one of `address`
+str, "city": str, "country": str, "block": str}`. Places outside Japan carry a
+`country` instead of a prefecture, taken from the last component of the address
+Google returns, and their `block` is that country.
+
+`prefecture_source` is one of `address`
 (taken from the formatted address Google returned), `polygon` (the point falls
 inside a prefecture outline), `nearest` (just offshore, snapped to the closest
 outline within 0.15°), or `none`.
@@ -99,6 +111,7 @@ part of this package that Google can break.
 | `…[1][7]` | Knowledge Graph mid |
 | `…[9]` / `…[10]` | **entry added / updated** `[seconds, nanos]` |
 | `…[12]` | **entry author** `[name, avatar, user id]` |
+| `…[15][0]` | **note author** - not always the entry author |
 
 `[0][12]` is compared against the number of places actually returned, and
 `PlaceList.truncated` reports a mismatch.

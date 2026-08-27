@@ -114,6 +114,20 @@ def city_from_address(address: str) -> str:
     return ""
 
 
+def country_from_address(address: str) -> str:
+    """Return the country of a non-Japanese address, or "" if it is Japanese.
+
+    Google formats foreign addresses with the country last, localised to the
+    requested language: "Friesenstrasse 64-66, 50670 Koeln, ..." Collapsing
+    every one of those to a single "abroad" bucket throws away the only piece
+    of geography the payload does supply for them.
+    """
+    if not address or prefecture_from_address(address):
+        return ""
+    tail = address.rsplit(",", 1)[-1].strip()
+    return tail if tail and tail != address.strip() else ""
+
+
 def cache_dir() -> Path:
     """Per-user cache location, resolved at runtime on every platform."""
     base = os.environ.get("GMAPLIST_CACHE") or os.environ.get("XDG_CACHE_HOME")
@@ -240,7 +254,8 @@ def annotate(places: Iterable, index: PrefectureIndex | None) -> list[dict]:
     """Attach prefecture, city and block to each place.
 
     ``source`` records how the prefecture was determined, so callers can tell a
-    Google-supplied address from an inferred one.
+    Google-supplied address from an inferred one. Places outside Japan carry a
+    ``country`` instead of a prefecture, and their block is that country.
     """
     out = []
     for place in places:
@@ -248,13 +263,15 @@ def annotate(places: Iterable, index: PrefectureIndex | None) -> list[dict]:
         source = "address" if pref else "none"
         if not pref and index is not None:
             pref, source = index.resolve(place.lat, place.lng)
+        country = "" if pref else country_from_address(place.address)
         out.append(
             {
                 "place": place,
                 "prefecture": pref,
                 "prefecture_source": source,
                 "city": city_from_address(place.address),
-                "block": BLOCKS.get(pref or "", "" if pref else "abroad"),
+                "country": country,
+                "block": BLOCKS.get(pref or "", "") if pref else (country or "abroad"),
             }
         )
     return out

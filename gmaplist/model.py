@@ -62,6 +62,7 @@ class Place:
     place_id: str = ""
     mid: str = ""
     added_by: Author | None = None
+    note_author: Author | None = None
     added_at: _dt.datetime | None = None
     updated_at: _dt.datetime | None = None
 
@@ -93,6 +94,10 @@ class Place:
             place_id=place_id,
             mid=_at(node, 1, 7) or "",
             added_by=Author._parse(_at(node, 12)),
+            # A note carries its own author. Usually the same person who added
+            # the place, but a collaborator can annotate someone else's entry,
+            # and attributing that note to the wrong person is silently wrong.
+            note_author=Author._parse(_at(node, 15, 0)),
             added_at=_ts(_at(node, 9)),
             updated_at=_ts(_at(node, 10)),
         )

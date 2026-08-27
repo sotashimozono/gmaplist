@@ -85,3 +85,74 @@ class TestAggregations(unittest.TestCase):
         anon = row("e", "東京都", None, 26)
         stats = analyze.by_contributor([anon])
         self.assertEqual(stats[0]["name"], analyze.UNKNOWN)
+
+
+class TestNoteAttribution(unittest.TestCase):
+    """Notes belong to their own author, not to whoever added the place."""
+
+    @staticmethod
+    def _row(place_name, added_by, note, note_by):
+        place = Place(
+            name=place_name,
+            note=note,
+            place_id=place_name,
+            added_by=Author(added_by, added_by),
+            note_author=Author(note_by, note_by) if note_by else None,
+        )
+        return {
+            "place": place,
+            "prefecture": "東京都",
+            "prefecture_source": "address",
+            "city": "",
+            "country": "",
+            "block": "関東",
+        }
+
+    def setUp(self):
+        self.rows = [
+            self._row("a", "Alice", "x" * 10, "Alice"),
+            self._row("b", "Alice", "x" * 20, "Bob"),
+            self._row("c", "Bob", "", None),
+        ]
+
+    def test_notes_are_credited_to_their_writer(self):
+        stats = {s["name"]: s for s in analyze.by_contributor(self.rows)}
+        self.assertEqual(stats["Alice"]["count"], 2)
+        self.assertEqual(stats["Alice"]["notes_written"], 1)
+        self.assertEqual(stats["Bob"]["count"], 1)
+        self.assertEqual(stats["Bob"]["notes_written"], 1)
+
+    def test_with_note_still_counts_annotated_entries(self):
+        stats = {s["name"]: s for s in analyze.by_contributor(self.rows)}
+        # Both of Alice's entries carry a note, even though she wrote one.
+        self.assertEqual(stats["Alice"]["with_note"], 2)
+        self.assertEqual(stats["Bob"]["with_note"], 0)
+
+    def test_average_length_uses_only_notes_the_person_wrote(self):
+        stats = {s["name"]: s for s in analyze.by_contributor(self.rows)}
+        self.assertAlmostEqual(stats["Alice"]["avg_note_chars"], 10.0)
+        self.assertAlmostEqual(stats["Bob"]["avg_note_chars"], 20.0)
+
+    def test_cross_author_notes_finds_the_collaboration(self):
+        crossed = analyze.cross_author_notes(self.rows)
+        self.assertEqual(len(crossed), 1)
+        self.assertEqual(crossed[0]["name"], "b")
+        self.assertEqual(crossed[0]["added_by"], "Alice")
+        self.assertEqual(crossed[0]["note_by"], "Bob")
+
+    def test_no_cross_author_notes_when_everyone_annotates_their_own(self):
+        rows = [self._row("a", "Alice", "note", "Alice")]
+        self.assertEqual(analyze.cross_author_notes(rows), [])
+
+    def test_missing_note_author_falls_back_to_the_entry_author(self):
+        rows = [self._row("a", "Alice", "note", None)]
+        stats = {s["name"]: s for s in analyze.by_contributor(rows)}
+        self.assertEqual(stats["Alice"]["notes_written"], 1)
+        self.assertEqual(analyze.cross_author_notes(rows), [])
+
+    def test_someone_who_only_wrote_notes_still_appears(self):
+        rows = [self._row("a", "Alice", "note", "Carol")]
+        stats = {s["name"]: s for s in analyze.by_contributor(rows)}
+        self.assertIn("Carol", stats)
+        self.assertEqual(stats["Carol"]["count"], 0)
+        self.assertEqual(stats["Carol"]["notes_written"], 1)
