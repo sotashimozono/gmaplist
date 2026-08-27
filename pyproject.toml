@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "gmaplist"
-version = "0.1.0"
+version = "0.2.0"
 description = "Read and analyse Google Maps shared place lists, including per-entry contributor and timestamp"
 readme = "README.md"
 requires-python = ">=3.10"
@@ -19,3 +19,16 @@ gmaplist = "gmaplist.cli:main"
 
 [tool.setuptools]
 packages = ["gmaplist"]
+
+[tool.ruff]
+target-version = "py310"
+line-length = 88
+
+[tool.ruff.lint]
+# Explicit, so a ruff upgrade cannot silently widen or narrow what CI enforces.
+select = ["E", "F", "W", "I", "UP", "B", "SIM", "RUF", "FURB", "PL"]
+# Complexity caps fight the payload decoder, which is inherently branchy, and
+# magic-value comparisons are the point of an assertion-heavy test suite.
+# RUF001: Japanese addresses from Google carry fullwidth digits and a real
+# MINUS SIGN; flagging them as ambiguous would mean corrupting the fixtures.
+ignore = ["PLR0912", "PLR0913", "PLR0915", "PLR2004", "RUF001"]

@@ -8,7 +8,7 @@ from __future__ import annotations
 import datetime as _dt
 import unicodedata
 from collections import Counter
-from typing import Sequence
+from collections.abc import Sequence
 
 from . import analyze
 
@@ -22,11 +22,15 @@ def pad(text: str, n: int, align: str = "<") -> str:
     return text + fill if align == "<" else fill + text
 
 
-def _stamp(value: _dt.datetime | None, tz: _dt.timezone, fmt: str = "%Y-%m-%d %H:%M") -> str:
+def _stamp(
+    value: _dt.datetime | None, tz: _dt.timezone, fmt: str = "%Y-%m-%d %H:%M"
+) -> str:
     return value.astimezone(tz).strftime(fmt) if value else "-"
 
 
-def render(plist, rows: Sequence[dict], tz_offset_hours: float = 9.0, bar_unit: int = 2) -> str:
+def render(
+    plist, rows: Sequence[dict], tz_offset_hours: float = 9.0, bar_unit: int = 2
+) -> str:
     tz = _dt.timezone(_dt.timedelta(hours=tz_offset_hours))
     out: list[str] = []
     add = out.append
@@ -34,11 +38,19 @@ def render(plist, rows: Sequence[dict], tz_offset_hours: float = 9.0, bar_unit: 
     add(f"# {plist.title or plist.list_id}")
     owner = plist.owner.name if plist.owner else "-"
     add(f"owner: {owner}   places: {len(rows)}   url: {plist.url}")
-    add(f"created: {_stamp(plist.created_at, tz)}   updated: {_stamp(plist.updated_at, tz)}")
+    add(
+        "created: "
+        + _stamp(plist.created_at, tz)
+        + "   updated: "
+        + _stamp(plist.updated_at, tz)
+    )
     if plist.description:
         add(f"description: {plist.description}")
     if plist.truncated:
-        add(f"WARNING: Google reports {plist.reported_count} places but returned {len(rows)}.")
+        add(
+            f"WARNING: Google reports {plist.reported_count} places "
+            f"but returned {len(rows)}."
+        )
 
     contributors = analyze.by_contributor(rows)
     add("")
@@ -49,14 +61,22 @@ def render(plist, rows: Sequence[dict], tz_offset_hours: float = 9.0, bar_unit: 
         f"{pad('notes', 7, '>')}  {pad('avg', 6, '>')}  top regions"
     )
     for c in contributors:
-        regions = " / ".join("{}{}".format(r, n) for r, n in c["top_regions"])
+        regions = " / ".join(f"{r}{n}" for r, n in c["top_regions"])
         share = "{:.1f}%".format(c["share"] * 100)
         notes = "{}/{}".format(c["with_note"], c["count"])
         avg = "{:.0f}".format(c["avg_note_chars"])
         add(
-            pad(str(c["count"]), 6, ">") + "  " + pad(share, 6, ">") + "  "
-            + pad(c["name"], name_w) + "  " + pad(notes, 7, ">") + "  "
-            + pad(avg, 6, ">") + "  " + regions
+            pad(str(c["count"]), 6, ">")
+            + "  "
+            + pad(share, 6, ">")
+            + "  "
+            + pad(c["name"], name_w)
+            + "  "
+            + pad(notes, 7, ">")
+            + "  "
+            + pad(avg, 6, ">")
+            + "  "
+            + regions
         )
 
     add("")
@@ -72,8 +92,10 @@ def render(plist, rows: Sequence[dict], tz_offset_hours: float = 9.0, bar_unit: 
     blocks = analyze.by_block(rows)
     block_w = max([width(b) for b, _ in blocks] + [4])
     for block, n in blocks:
-        share = "{:.1f}%".format(n / total * 100)
-        add(pad(str(n), 5, ">") + "  " + pad(share, 6, ">") + "  " + pad(block, block_w))
+        share = f"{n / total * 100:.1f}%"
+        add(
+            pad(str(n), 5, ">") + "  " + pad(share, 6, ">") + "  " + pad(block, block_w)
+        )
 
     add("")
     add("## additions per day")

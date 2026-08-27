@@ -1,0 +1,33 @@
+name: Feature request
+description: Propose a capability that is not there yet.
+labels: [enhancement]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: The problem
+      description: What are you trying to find out about a list that you cannot today?
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed shape
+      description: A CLI flag, a function signature, or an output column.
+    validations:
+      required: true
+  - type: dropdown
+    id: layer
+    attributes:
+      label: Which layer does this belong to?
+      description: >-
+        This package is data access plus general aggregation. Analysis that
+        only makes sense for one group of people belongs in a script that
+        imports it.
+      options:
+        - Fetching or decoding the payload
+        - Region resolution
+        - General aggregation or export
+        - Not sure
+    validations:
+      required: true

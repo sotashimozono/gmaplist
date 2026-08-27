@@ -1,0 +1,37 @@
+# Dependabot configuration.
+#
+# Policy:
+#   - Weekly, Monday 07:00 UTC.
+#   - Auto-merge is intentionally NOT configured. Every PR is reviewed and
+#     merged by hand.
+#   - Only GitHub Actions are tracked. The package itself has no runtime
+#     dependencies, and the single dev tool is pinned in requirements-dev.txt
+#     on purpose: an unpinned formatter is the classic source of "green
+#     locally, red in CI".
+#   - Actions are pinned by commit SHA, so these PRs move a SHA and its
+#     trailing version comment together.
+
+version: 2
+
+updates:
+  - package-ecosystem: github-actions
+    directory: "/"
+    schedule:
+      interval: weekly
+      day: monday
+      time: "07:00"
+      timezone: UTC
+    open-pull-requests-limit: 5
+    commit-message:
+      prefix: "chore(deps)"
+      include: scope
+    labels:
+      - dependencies
+      - ci
+      - automated
+    groups:
+      actions-minor-and-patch:
+        patterns: ["*"]
+        update-types:
+          - minor
+          - patch

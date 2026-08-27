@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import datetime as _dt
 from collections import Counter, defaultdict
-from typing import Sequence
+from collections.abc import Sequence
 
 UNKNOWN = "(unknown)"
 
@@ -34,7 +34,9 @@ def by_contributor(rows: Sequence[dict]) -> list[dict]:
                 "count": len(items),
                 "share": len(items) / len(rows) if rows else 0.0,
                 "with_note": len(notes),
-                "avg_note_chars": sum(len(n) for n in notes) / len(notes) if notes else 0.0,
+                "avg_note_chars": sum(len(n) for n in notes) / len(notes)
+                if notes
+                else 0.0,
                 "top_regions": Counter(_region(r) for r in items).most_common(3),
                 "first_added": stamps[0] if stamps else None,
                 "last_added": stamps[-1] if stamps else None,
@@ -59,7 +61,9 @@ def by_city(rows: Sequence[dict], limit: int | None = None) -> list[tuple[str, i
     return counts.most_common(limit)
 
 
-def timeline(rows: Sequence[dict], granularity: str = "day", tz_offset_hours: float = 9.0) -> list[tuple[str, int]]:
+def timeline(
+    rows: Sequence[dict], granularity: str = "day", tz_offset_hours: float = 9.0
+) -> list[tuple[str, int]]:
     """Additions bucketed by day, month or hour in a fixed UTC offset."""
     fmt = {"day": "%Y-%m-%d", "month": "%Y-%m", "hour": "%Y-%m-%d %H"}[granularity]
     tz = _dt.timezone(_dt.timedelta(hours=tz_offset_hours))
@@ -71,7 +75,9 @@ def timeline(rows: Sequence[dict], granularity: str = "day", tz_offset_hours: fl
     return sorted(counts.items())
 
 
-def crosstab(rows: Sequence[dict]) -> tuple[list[str], list[str], dict[tuple[str, str], int]]:
+def crosstab(
+    rows: Sequence[dict],
+) -> tuple[list[str], list[str], dict[tuple[str, str], int]]:
     """Contributor x region block, ordered by descending totals."""
     people = [d["name"] for d in by_contributor(rows)]
     blocks = [b for b, _ in by_block(rows)]

@@ -24,7 +24,10 @@ ITEM = [
     ],
     "Test Restaurant",
     "line one\nline two",
-    None, None, None, None,
+    None,
+    None,
+    None,
+    None,
     [[1], ["6924546073212308543", "-4558286055717778399"]],
     [1723682872, 157928000],
     [1787793162, 274472000],
@@ -67,7 +70,10 @@ class TestPlace(unittest.TestCase):
         self.assertEqual(self.place.place_id, "0x6018edf73ca54c3f:0xc0bdb6fbb0534c21")
 
     def test_author(self):
-        self.assertEqual(self.place.added_by, Author("Tester", "100000000000000000001", "https://example.invalid/avatar"))
+        self.assertEqual(
+            self.place.added_by,
+            Author("Tester", "100000000000000000001", "https://example.invalid/avatar"),
+        )
 
     def test_timestamps_are_utc_aware(self):
         self.assertEqual(self.place.added_at.tzinfo, dt.timezone.utc)

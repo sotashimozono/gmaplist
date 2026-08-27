@@ -1,5 +1,10 @@
 # gmaplist
 
+[![ci](https://github.com/sotashimozono/gmaplist/actions/workflows/ci.yml/badge.svg)](https://github.com/sotashimozono/gmaplist/actions/workflows/ci.yml)
+[![codeql](https://github.com/sotashimozono/gmaplist/actions/workflows/codeql.yml/badge.svg)](https://github.com/sotashimozono/gmaplist/actions/workflows/codeql.yml)
+![python](https://img.shields.io/badge/python-3.10%20%7C%203.11%20%7C%203.12%20%7C%203.13-blue)
+[![license](https://img.shields.io/badge/license-MIT-green)](LICENSE)
+
 Read a **Google Maps shared place list** and analyse who added what, where, and when.
 
 Google publishes no API for saved lists, and a Takeout export keeps only the
@@ -109,6 +114,13 @@ part of this package that Google can break.
 - The boundary file is
   [dataofjapan/land](https://github.com/dataofjapan/land), cached under the
   user cache directory. Non-Japanese places resolve to `abroad`.
+
+## Contributing
+
+`main` is protected and every change goes through a pull request with a
+version bump. See [CONTRIBUTING.md](CONTRIBUTING.md), and
+[.github/SECURITY.md](.github/SECURITY.md) for why exports and list ids
+must stay out of the repository.
 
 ## License
 

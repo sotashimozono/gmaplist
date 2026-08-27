@@ -7,7 +7,9 @@ from gmaplist.fetch import ListFetchError, build_url, resolve_list_id
 
 class TestResolveListId(unittest.TestCase):
     def test_bare_id(self):
-        self.assertEqual(resolve_list_id("aB3dEfGhIjKlMnOpQrStUv"), "aB3dEfGhIjKlMnOpQrStUv")
+        self.assertEqual(
+            resolve_list_id("aB3dEfGhIjKlMnOpQrStUv"), "aB3dEfGhIjKlMnOpQrStUv"
+        )
 
     def test_data_url(self):
         url = "https://www.google.com/maps/@/data=!3m1!4b1!4m3!11m2!2saB3dEfGhIjKlMnOpQrStUv!3e3?entry=tts"

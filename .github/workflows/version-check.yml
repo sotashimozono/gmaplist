@@ -1,0 +1,45 @@
+name: version-check
+
+# Required check. Every pull request must move [project].version forward.
+#
+# Without a published artifact there is no release gate to lean on, so the
+# version is the only durable record of "this is a different build from the
+# one before it". Making the bump mandatory keeps that record honest.
+
+on:
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: version-check-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  version-check:
+    name: version-check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97  # v7.0.0
+        with:
+          python-version: "3.12"
+      - name: Compare the version against the base branch
+        env:
+          BASE_REF: ${{ github.base_ref }}
+          PR_ACTOR: ${{ github.actor }}
+        run: |
+          set -euo pipefail
+          # Dependabot cannot bump a version it does not know about. Its PRs
+          # are reviewed and merged by hand anyway, so let them through here
+          # rather than leaving them permanently unmergeable.
+          if [ "$PR_ACTOR" = "dependabot[bot]" ]; then
+            echo "version-check: skipped for dependabot"
+            exit 0
+          fi
+          git fetch --no-tags --depth=1 origin "$BASE_REF"
+          git show "origin/$BASE_REF:pyproject.toml" > /tmp/base-pyproject.toml
+          python scripts/version_bump_check.py /tmp/base-pyproject.toml pyproject.toml
