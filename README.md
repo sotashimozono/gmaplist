@@ -44,6 +44,8 @@ gmaplist https://maps.app.goo.gl/xxxxxxxxxxxx --csv places.csv
                       reach section
   --tz-offset HOURS   offset used to display timestamps (default 9, JST)
   --no-geo            skip boundary lookup for places with no address
+  --categories        EXPERIMENTAL: look up categories and group them
+                      into genres (a second endpoint, see below)
   --refresh-geo       re-download the boundary file
   --hl / --gl         Google language and region (default ja / jp)
 ```
@@ -87,6 +89,43 @@ Google returns, and their `block` is that country.
 inside a prefecture outline), `nearest` (just offshore, snapped to the closest
 outline within 0.15°), or `none`.
 
+## Experimental: categories
+
+A saved list records *where* people went, never *what kind of place* it was:
+the payload carries no category at all. `gmaplist.experimental` fills that in
+from the Maps search endpoint, queried by the feature ids the list already
+gives us, and rolls Google's very fine-grained categories up into countable
+genres.
+
+```python
+from gmaplist import experimental
+
+details = experimental.fetch_details([r["place"].place_id for r in rows])
+report = experimental.attach(rows, details)
+print(report.matched, len(report.missing), report.review_coverage)
+experimental.by_genre(rows)
+```
+
+It is separate, and named experimental, for three reasons.
+
+- It reads a **different undocumented endpoint** from the rest of the package,
+  with its own way of breaking.
+- `genre_of` applies **opinionated Japanese-language rules**. They are
+  keyword matches against Google's category strings, never against place
+  names, so any classification can be checked against what Google actually
+  said. Anything unmatched stays in an explicit unclassified bucket rather
+  than being forced into the nearest genre, and `by_category` shows the raw
+  categories for auditing. Pass your own `rules` for another language.
+- Coverage is **not total**, and `attach` returns an `Enrichment` saying so.
+  Streets, villages and other non-business entries have no category at all.
+
+One trap worth stating plainly: `review_count` is usually absent. The endpoint
+only fills it in for a browser session with cookies. Over plain HTTP it comes
+back for a minority of places, and *which* minority is a property of the
+request rather than of the places — so a fame statistic computed over it is
+measuring the request, not the list. Check `Enrichment.review_coverage` before
+using it.
+
 ## How it works
 
 `GET /maps/preview/entitylist/getlist?pb=!1m4!1s<LIST_ID>!2e1!3m1!1e1!2e2!3e2!4i<PAGE_SIZE>`
@@ -112,6 +151,8 @@ part of this package that Google can break.
 | `…[9]` / `…[10]` | **entry added / updated** `[seconds, nanos]` |
 | `…[12]` | **entry author** `[name, avatar, user id]` |
 | `…[15][0]` | **note author** - not always the entry author |
+
+Categories come from a second endpoint, `GET /search?tbm=map`, which accepts a bare list of feature ids: `pb=!7i<COUNT>` followed by `!72m2!1m1!1s<PLACE_ID>` per place, then `!77b1`. The page size must match the batch or the reply is silently truncated to twenty. Names sit at `[0][1][…][14][11]`, categories at `[…][14][13]`, rating at `[…][14][4][7]`.
 
 `[0][12]` is compared against the number of places actually returned, and
 `PlaceList.truncated` reports a mismatch.

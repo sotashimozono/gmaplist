@@ -10,7 +10,7 @@ import unicodedata
 from collections import Counter
 from collections.abc import Sequence
 
-from . import analyze
+from . import analyze, experimental
 
 
 def width(text: str) -> int:
@@ -126,6 +126,38 @@ def render(
             v = cells.get((person, block), 0)
             line += pad(str(v) if v else "", col_w, ">")
         add(line)
+
+    if any("genre" in row for row in rows):
+        add("")
+        add("## genres (experimental)")
+        genre_rows = experimental.by_genre(rows)
+        genre_w = max([width(g) for g, _ in genre_rows] + [4])
+        for genre, count in genre_rows:
+            share = f"{count / total * 100:.1f}%"
+            add(
+                pad(str(count), 5, ">")
+                + "  "
+                + pad(share, 6, ">")
+                + "  "
+                + pad(genre, genre_w)
+                + "  "
+                + "#" * round(count / bar_unit)
+            )
+        uncategorised = [r["place"].name for r in rows if not r.get("categories")]
+        if uncategorised:
+            add(f"   without a Google category: {', '.join(uncategorised)}")
+
+        people_g, genres, cells_g = experimental.genre_crosstab(rows)
+        add("")
+        add("## contributor x genre (experimental)")
+        gcol = max([width(g) for g in genres] + [3]) + 1
+        add(pad("", name_w) + "".join(pad(g, gcol, ">") for g in genres))
+        for person in people_g:
+            line = pad(person, name_w)
+            for genre in genres:
+                v = cells_g.get((person, genre), 0)
+                line += pad(str(v) if v else "", gcol, ">")
+            add(line)
 
     crossed = analyze.cross_author_notes(rows)
     if crossed:
