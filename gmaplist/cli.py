@@ -6,7 +6,7 @@ import argparse
 import contextlib
 import sys
 
-from . import __version__, export, load
+from . import __version__, experimental, export, load
 from .fetch import ListFetchError
 from .report import render
 
@@ -43,6 +43,14 @@ def build_parser() -> argparse.ArgumentParser:
     )
     p.add_argument(
         "--refresh-geo", action="store_true", help="re-download the boundary file"
+    )
+    p.add_argument(
+        "--categories",
+        action="store_true",
+        help=(
+            "EXPERIMENTAL: look up each place's categories in a second "
+            "undocumented endpoint and group them into genres"
+        ),
     )
     p.add_argument("--hl", default="ja", help="Google UI language (default: ja)")
     p.add_argument("--gl", default="jp", help="Google region (default: jp)")
@@ -86,6 +94,23 @@ def main(argv: list[str] | None = None) -> int:
     if not rows:
         print("gmaplist: the list is empty or not publicly shared", file=sys.stderr)
         return 1
+
+    if args.categories:
+        try:
+            details = experimental.fetch_details(
+                [r["place"].place_id for r in rows], hl=args.hl, gl=args.gl
+            )
+        except (experimental.CategoryFetchError, OSError) as exc:
+            print(f"gmaplist: category lookup failed: {exc}", file=sys.stderr)
+            return 3
+        enrichment = experimental.attach(rows, details)
+        # State the gaps rather than letting a partial breakdown read as whole.
+        print(
+            f"categories: matched {enrichment.matched}/{len(rows)}, "
+            f"{len(enrichment.without_category)} with no category, "
+            f"review counts for {enrichment.with_review_count}",
+            file=sys.stderr,
+        )
 
     if args.csv:
         export.write_csv(args.csv, rows, args.tz_offset, anchor)

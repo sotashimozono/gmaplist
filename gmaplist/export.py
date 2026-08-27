@@ -72,6 +72,15 @@ def to_records(
             "prefecture_source": row["prefecture_source"],
             "maps_url": p.maps_url,
         }
+        # Present only when gmaplist.experimental.attach has run.
+        if "genre" in row:
+            record["categories"] = "; ".join(row.get("categories") or [])
+            record["genre"] = row["genre"]
+            detail = row.get("detail")
+            record["rating"] = detail.rating if detail else ""
+            record["review_count"] = (
+                detail.review_count if detail and detail.review_count else ""
+            )
         if anchor is not None:
             record["distance_km"] = (
                 round(analyze.haversine_km(anchor, (p.lat, p.lng)), 3)
@@ -90,7 +99,11 @@ def write_csv(
 ) -> None:
     """Write UTF-8 with BOM so Excel opens Japanese text correctly."""
     records = to_records(rows, tz_offset_hours, anchor)
-    fields = [*FIELDS, "distance_km"] if anchor is not None else list(FIELDS)
+    fields = list(FIELDS)
+    if any("genre" in row for row in rows):
+        fields += ["categories", "genre", "rating", "review_count"]
+    if anchor is not None:
+        fields.append("distance_km")
     with open(path, "w", encoding="utf-8-sig", newline="") as fh:
         writer = csv.DictWriter(fh, fieldnames=fields)
         writer.writeheader()
